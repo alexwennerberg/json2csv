@@ -1,0 +1,7 @@
+[package]
+name = "json2csv"
+version = "0.1.0"
+authors = ["alex wennerberg <awennerberg@cloudbakers.com>"]
+edition = "2018"
+
+[dependencies]
