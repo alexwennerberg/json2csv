@@ -1,10 +1,16 @@
 extern crate csv;
 
-use serde_json::Value;
-use std::collections::HashMap;
+use serde_json::{Deserializer, Value};
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 
+// TODO: move code in main here
+
 // TODO: implement flatten and unwind
+//
+fn flatten_record() {}
+
+fn unwind_record() {}
 
 pub fn convert_header_to_csv_string(headers: &Vec<&String>) -> Result<String, Box<Error>> {
     let mut wtr = csv::Writer::from_writer(vec![]);
