@@ -3,6 +3,7 @@ extern crate csv;
 use serde_json::{Deserializer, Value};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
+use std::io::{self};
 
 // TODO: move code in main here
 
@@ -26,8 +27,9 @@ pub fn convert_header_to_csv_string(headers: &Vec<&String>) -> Result<String, Bo
 pub fn convert_json_record_to_csv_string(
     headers: &Vec<&String>,
     json_map: &HashMap<String, Value>,
-) -> Result<String, Box<Error>> {
-    let mut wtr = csv::Writer::from_writer(vec![]);
+) {
+    // todo move writer away from this function
+    let mut wtr = csv::Writer::from_writer(io::stdout());
     // iterate over headers
     // if header is present in record, add it
     // if not, blank string
@@ -43,9 +45,7 @@ pub fn convert_json_record_to_csv_string(
         };
         record.push(csv_result)
     }
-    wtr.write_record(record)?;
-    let data = String::from_utf8(wtr.into_inner()?)?;
-    return Ok(data);
+    wtr.write_record(record).unwrap();
 }
 
 // TODO: add tests

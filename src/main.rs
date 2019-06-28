@@ -1,3 +1,11 @@
+#![warn(
+     clippy::all,
+     clippy::restriction,
+     clippy::pedantic,
+     clippy::nursery,
+     clippy::cargo,
+ )]
+
 extern crate clap;
 
 use clap::{App, Arg};
@@ -5,7 +13,7 @@ use clap::{App, Arg};
 use serde_json::{Deserializer, Value};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{self, Write, BufRead, BufReader};
 
 mod convert;
 
@@ -66,10 +74,9 @@ fn main() {
         "{}",
         convert::convert_header_to_csv_string(&headers).unwrap()
     );
-    let outstring = convert::convert_json_record_to_csv_string(&headers, &first_item);
-    print!("{}", outstring.unwrap());
+    convert::convert_json_record_to_csv_string(&headers, &first_item);
     for item in stream {
-        let outstring = convert::convert_json_record_to_csv_string(&headers, &item.unwrap());
-        print!("{}", outstring.unwrap());
+        convert::convert_json_record_to_csv_string(&headers, &item.unwrap());
+        // print!("{}", outstring.unwrap());
     }
 }
