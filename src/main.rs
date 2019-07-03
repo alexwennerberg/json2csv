@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<Error>> {
         )
         .arg(
             Arg::with_name("no-header")
-            .help("Excclude the header from the output")
+            .help("Exclude the header from the output")
             .short("H")
             .long("no-header")
         )
@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<Error>> {
              .long("fields"),
          )
         .arg(Arg::with_name("delimiter")
-             .help("Output csv delimiter. Must be a single ASCII character. Default ','")
+             .help("Output csv delimiter. Must be a single ASCII character.")
              .short("d")
              .long("delimiter")
              .takes_value(true)
