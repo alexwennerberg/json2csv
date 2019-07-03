@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<Error>> {
         .arg(
             Arg::with_name("flatten")
             .help("Flatten nested jsons and arrays")
-            .short("f")
+            .short("F")
             .long("flatten")
             )
         .arg(
