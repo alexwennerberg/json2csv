@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<Error>> {
         )
         .arg(
             Arg::with_name("get-headers")
-                .help("Read input and list headers only")
+                .help("Read input and list all headers present only")
                 .short("g")
                 .long("get-headers"),
         )
