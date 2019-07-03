@@ -24,6 +24,12 @@ fn main() -> Result<(), Box<Error>> {
                 .short("g")
                 .long("get-headers"),
         )
+        .arg(
+            Arg::with_name("no-header")
+            .help("Excclude the header from the output")
+            .short("H")
+            .long("no-header")
+        )
         .arg(Arg::with_name("fields")
              .help("Optionally specify fields to include")
              .short("f")
@@ -42,13 +48,14 @@ fn main() -> Result<(), Box<Error>> {
     // https://docs.rs/csv/1.0.7/csv/struct.WriterBuilder.html
     // TODO: Implement these options:
     // -o --output
-    // -f --fields
     // -u --unwind
     // -F --flatten
     // -S --flatten-separator
     // -H --no-header
     // -g --get-headers get all headers from the file and nothing else
     // (csv settings)
+    // copy docs
+    // check license on json2csv
 
     let mut stream = Deserializer::from_reader(&mut input).into_iter::<HashMap<String, Value>>();
     // TODO: map unwind and flatten transformations here
@@ -75,7 +82,9 @@ fn main() -> Result<(), Box<Error>> {
         None => first_item.keys().map(|a| a.as_str()).collect()
     };
 
-    wtr.write_record(convert::convert_header_to_csv_record(&headers)?)?;
+    if !m.is_present("no-header") {
+        wtr.write_record(convert::convert_header_to_csv_record(&headers)?)?;
+    }
     wtr.write_record(convert::convert_json_record_to_csv_record(&headers, &first_item)?)?;
     for item in stream {
         wtr.write_record(convert::convert_json_record_to_csv_record(&headers, &item.unwrap())?)?;
