@@ -1,6 +1,8 @@
 # Why?
 
-I love using the https://github.com/zemirco/json2csv library. It's a great tool for following the [Data Science at the Command Line](https://www.datascienceatthecommandline.com/) philosophy. I wondered if I could get better performance by rewriting it in rust.
+I love using the https://github.com/zemirco/json2csv library. It's a great tool for following the [Data Science at the Command Line](https://www.datascienceatthecommandline.com/) philosophy.
+
+
 
 Here's what I want out of a json to csv converter:
 

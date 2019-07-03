@@ -1,9 +1,8 @@
 extern crate csv;
 
-use serde_json::{Deserializer, Value};
+use serde_json::{Map, Value};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use std::io::{self};
 
 // TODO: move code in main here
 
@@ -23,7 +22,7 @@ pub fn convert_header_to_csv_record(headers: &Vec<&str>) -> Result<Vec<String>, 
 
 pub fn convert_json_record_to_csv_record(
     headers: &Vec<&str>,
-    json_map: &HashMap<String, Value>,
+    json_map: &Value
 ) -> Result<Vec<String>, Box<Error>>{
     // todo move writer away from this function
     // iterate over headers

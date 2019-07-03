@@ -1,12 +1,10 @@
-extern crate clap;
-
 use clap::{App, Arg};
 
-use serde_json::{Deserializer, Value};
-use std::collections::{HashMap, HashSet};
+use serde_json::{Deserializer, Value, json};
+use std::collections::{HashSet};
 use std::fs::{self,File};
 use std::error::Error;
-use std::io::{self, Write, BufRead, BufReader};
+use std::io::{self,  BufRead, BufReader};
 
 mod convert;
 
@@ -30,6 +28,12 @@ fn main() -> Result<(), Box<Error>> {
                 .short("g")
                 .long("get-headers"),
         )
+        .arg(
+            Arg::with_name("flatten")
+            .help("Flatten nested jsons and arrays")
+            .short("f")
+            .long("flatten")
+            )
         .arg(
             Arg::with_name("no-header")
             .help("Exclude the header from the output")
@@ -66,7 +70,6 @@ fn main() -> Result<(), Box<Error>> {
     // TODO: set csv configuration variables via command line:
     // https://docs.rs/csv/1.0.7/csv/struct.WriterBuilder.html
     // TODO: Implement these options:
-    // -o --output
     // -u --unwind
     // -F --flatten
     // -S --flatten-separator
@@ -75,15 +78,18 @@ fn main() -> Result<(), Box<Error>> {
     // copy docs
     // check license on json2csv
     // add license
+    
+    let mut stream = Deserializer::from_reader(&mut input).into_iter::<Value>()
+        .map(|item| preprocess(item.unwrap(), m.is_present("flatten")));
 
-    let mut stream = Deserializer::from_reader(&mut input).into_iter::<HashMap<String, Value>>();
     // TODO: map unwind and flatten transformations here
+    
 
     // read and print headers
     if m.is_present("get-headers") {
         let mut headers = HashSet::new();
         for item in stream {
-            for key in item.unwrap().keys() {
+            for key in item.as_object().unwrap().keys() {
                 headers.insert(key.to_string());
             }
         }
@@ -95,10 +101,10 @@ fn main() -> Result<(), Box<Error>> {
     // todo validate valid delimiter
     //
 
-    let first_item = stream.next().unwrap().unwrap();
+    let first_item = stream.next().unwrap();
     let headers = match m.values_of("fields") {
         Some(f) => f.collect(),
-        None => first_item.keys().map(|a| a.as_str()).collect()
+        None => first_item.as_object().unwrap().keys().map(|a| a.as_str()).collect()
     };
 
     if !m.is_present("no-header") {
@@ -106,9 +112,18 @@ fn main() -> Result<(), Box<Error>> {
     }
     wtr.write_record(convert::convert_json_record_to_csv_record(&headers, &first_item)?)?;
     for item in stream {
-        wtr.write_record(convert::convert_json_record_to_csv_record(&headers, &item.unwrap())?)?;
+        wtr.write_record(convert::convert_json_record_to_csv_record(&headers, &item)?)?;
     }
     Ok(())
+}
+
+fn preprocess(item: Value, flatten: bool) -> Value {
+    if flatten {
+        let mut flat_value: Value = json!({});
+        flatten_json::flatten(&item, &mut flat_value, None, true).unwrap();
+        return flat_value;
+    }
+    item
 }
 
 // From https://github.com/BurntSushi/xsv/blob/master/src/config.rs
