@@ -4,7 +4,7 @@ use clap::{App, Arg};
 
 use serde_json::{Deserializer, Value};
 use std::collections::{HashMap, HashSet};
-use std::fs::File;
+use std::fs::{self,File};
 use std::error::Error;
 use std::io::{self, Write, BufRead, BufReader};
 
@@ -17,7 +17,13 @@ fn main() -> Result<(), Box<Error>> {
         .version("0.1.0")
         .author("Alex Wennerberg <alex@alexwennerberg.com>")
         .about("Converts JSON into CSV")
-        .arg(Arg::with_name("INPUT").help("Input file"))
+        .arg(Arg::with_name("INPUT").help("Input file. If not present, reads from stdin"))
+        .arg(Arg::with_name("output")
+             .help("Output file. If not present, writes to stdout")
+             .short("o")
+             .long("output")
+             .takes_value(true)
+        )
         .arg(
             Arg::with_name("get-headers")
                 .help("Read input and list headers only")
@@ -38,7 +44,7 @@ fn main() -> Result<(), Box<Error>> {
              .long("fields"),
          )
         .get_matches();
-    // TODO: specify headers via cli
+
     // read from stdin or file https://stackoverflow.com/a/49964042
     let mut input: Box<BufRead> = match m.value_of("INPUT") {
         Some(i) => Box::new(BufReader::new(File::open(i).unwrap())),
@@ -56,6 +62,7 @@ fn main() -> Result<(), Box<Error>> {
     // (csv settings)
     // copy docs
     // check license on json2csv
+    // add license
 
     let mut stream = Deserializer::from_reader(&mut input).into_iter::<HashMap<String, Value>>();
     // TODO: map unwind and flatten transformations here
@@ -74,7 +81,7 @@ fn main() -> Result<(), Box<Error>> {
         return Ok(());
     }
 
-    let mut wtr = csv::Writer::from_writer(io::stdout());
+    let mut wtr = csv::Writer::from_writer(io_writer(m.value_of("output"))?);
 
     let first_item = stream.next().unwrap().unwrap();
     let headers = match m.values_of("fields") {
@@ -90,4 +97,12 @@ fn main() -> Result<(), Box<Error>> {
         wtr.write_record(convert::convert_json_record_to_csv_record(&headers, &item.unwrap())?)?;
     }
     Ok(())
+}
+
+// From https://github.com/BurntSushi/xsv/blob/master/src/config.rs
+fn io_writer(path: Option<&str>) -> io::Result<Box<io::Write+'static>> {
+    Ok(match path {
+	None => Box::new(io::stdout()),
+	Some(ref p) => Box::new(fs::File::create(p)?),
+    })
 }
