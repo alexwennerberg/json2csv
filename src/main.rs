@@ -27,6 +27,7 @@ fn main() -> Result<(), Box<Error>> {
         .arg(Arg::with_name("fields")
              .help("Optionally specify fields to include")
              .short("f")
+             .takes_value(true)
              .multiple(true)
              .long("fields"),
          )
