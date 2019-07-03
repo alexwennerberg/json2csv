@@ -71,13 +71,8 @@ fn main() -> Result<(), Box<Error>> {
     // https://docs.rs/csv/1.0.7/csv/struct.WriterBuilder.html
     // TODO: Implement these options:
     // -u --unwind
-    // -F --flatten
     // -S --flatten-separator
-    // -g --get-headers get all headers from the file and nothing else
     // additional csv settings?
-    // copy docs
-    // check license on json2csv
-    // add license
     
     let mut stream = Deserializer::from_reader(&mut input).into_iter::<Value>()
         .map(|item| preprocess(item.unwrap(), m.is_present("flatten")));
@@ -94,7 +89,7 @@ fn main() -> Result<(), Box<Error>> {
             }
         }
         for item in headers {
-            println!("{}", item)
+            print!("\"{}\" ", item)
         }
         return Ok(());
     }
