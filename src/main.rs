@@ -1,11 +1,3 @@
-#![warn(
-     clippy::all,
-     clippy::restriction,
-     clippy::pedantic,
-     clippy::nursery,
-     clippy::cargo,
- )]
-
 extern crate clap;
 
 use clap::{App, Arg};
@@ -13,13 +5,14 @@ use clap::{App, Arg};
 use serde_json::{Deserializer, Value};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
+use std::error::Error;
 use std::io::{self, Write, BufRead, BufReader};
 
 mod convert;
 
 // TODO: parse json array using the code :  https://github.com/serde-rs/json/commit/55f5929c852484b863641fb6f876f4dcb69b96b8
 
-fn main() {
+fn main() -> Result<(), Box<Error>> {
     let m = App::new("json2csv")
         .version("0.1.0")
         .author("Alex Wennerberg <alex@alexwennerberg.com>")
@@ -31,6 +24,12 @@ fn main() {
                 .short("g")
                 .long("get-headers"),
         )
+        .arg(Arg::with_name("fields")
+             .help("Optionally specify fields to include")
+             .short("f")
+             .multiple(true)
+             .long("fields"),
+         )
         .get_matches();
     // TODO: specify headers via cli
     // read from stdin or file https://stackoverflow.com/a/49964042
@@ -64,19 +63,21 @@ fn main() {
         for item in headers {
             println!("{}", item)
         }
-        return;
+        return Ok(());
     }
 
-    // read and convert
+    let mut wtr = csv::Writer::from_writer(io::stdout());
+
     let first_item = stream.next().unwrap().unwrap();
-    let headers = first_item.keys().collect();
-    print!(
-        "{}",
-        convert::convert_header_to_csv_string(&headers).unwrap()
-    );
-    convert::convert_json_record_to_csv_string(&headers, &first_item);
+    let headers = match m.values_of("fields") {
+        Some(f) => f.collect(),
+        None => first_item.keys().map(|a| a.as_str()).collect()
+    };
+
+    wtr.write_record(convert::convert_header_to_csv_record(&headers)?)?;
+    wtr.write_record(convert::convert_json_record_to_csv_record(&headers, &first_item)?)?;
     for item in stream {
-        convert::convert_json_record_to_csv_string(&headers, &item.unwrap());
-        // print!("{}", outstring.unwrap());
+        wtr.write_record(convert::convert_json_record_to_csv_record(&headers, &item.unwrap())?)?;
     }
+    Ok(())
 }

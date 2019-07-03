@@ -13,23 +13,19 @@ fn flatten_record() {}
 
 fn unwind_record() {}
 
-pub fn convert_header_to_csv_string(headers: &Vec<&String>) -> Result<String, Box<Error>> {
-    let mut wtr = csv::Writer::from_writer(vec![]);
+pub fn convert_header_to_csv_record(headers: &Vec<&str>) -> Result<Vec<String>, Box<Error>> {
     let mut record = Vec::new();
     for item in headers {
-        record.push(item.clone());
+        record.push(String::from(item.clone()));
     }
-    wtr.write_record(record)?;
-    let data = String::from_utf8(wtr.into_inner()?)?;
-    Ok(data)
+    Ok(record)
 }
 
-pub fn convert_json_record_to_csv_string(
-    headers: &Vec<&String>,
+pub fn convert_json_record_to_csv_record(
+    headers: &Vec<&str>,
     json_map: &HashMap<String, Value>,
-) {
+) -> Result<Vec<String>, Box<Error>>{
     // todo move writer away from this function
-    let mut wtr = csv::Writer::from_writer(io::stdout());
     // iterate over headers
     // if header is present in record, add it
     // if not, blank string
@@ -45,7 +41,7 @@ pub fn convert_json_record_to_csv_string(
         };
         record.push(csv_result)
     }
-    wtr.write_record(record).unwrap();
+    Ok(record)
 }
 
 // TODO: add tests
