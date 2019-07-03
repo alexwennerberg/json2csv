@@ -43,6 +43,13 @@ fn main() -> Result<(), Box<Error>> {
              .multiple(true)
              .long("fields"),
          )
+        .arg(Arg::with_name("delimiter")
+             .help("Output csv delimiter. Must be a single ASCII character. Default ','")
+             .short("d")
+             .long("delimiter")
+             .takes_value(true)
+             .default_value(",")
+             )
         .get_matches();
 
     // read from stdin or file https://stackoverflow.com/a/49964042
@@ -50,6 +57,12 @@ fn main() -> Result<(), Box<Error>> {
         Some(i) => Box::new(BufReader::new(File::open(i).unwrap())),
         None => Box::new(BufReader::new(io::stdin())),
     };
+
+    //output writer with csv settings
+    let mut wtr = csv::WriterBuilder::new()
+        .delimiter(m.value_of("delimiter").unwrap().as_bytes()[0])
+        .from_writer(io_writer(m.value_of("output"))?);
+
     // TODO: set csv configuration variables via command line:
     // https://docs.rs/csv/1.0.7/csv/struct.WriterBuilder.html
     // TODO: Implement these options:
@@ -57,9 +70,8 @@ fn main() -> Result<(), Box<Error>> {
     // -u --unwind
     // -F --flatten
     // -S --flatten-separator
-    // -H --no-header
     // -g --get-headers get all headers from the file and nothing else
-    // (csv settings)
+    // additional csv settings?
     // copy docs
     // check license on json2csv
     // add license
@@ -80,8 +92,8 @@ fn main() -> Result<(), Box<Error>> {
         }
         return Ok(());
     }
-
-    let mut wtr = csv::Writer::from_writer(io_writer(m.value_of("output"))?);
+    // todo validate valid delimiter
+    //
 
     let first_item = stream.next().unwrap().unwrap();
     let headers = match m.values_of("fields") {
