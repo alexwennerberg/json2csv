@@ -22,8 +22,8 @@ pub fn convert_header_to_csv_record(headers: &Vec<&str>) -> Result<Vec<String>, 
 
 pub fn convert_json_record_to_csv_record(
     headers: &Vec<&str>,
-    json_map: &Value
-) -> Result<Vec<String>, Box<Error>>{
+    json_map: &Value,
+) -> Result<Vec<String>, Box<Error>> {
     // todo move writer away from this function
     // iterate over headers
     // if header is present in record, add it
