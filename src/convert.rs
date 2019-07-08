@@ -1,14 +1,74 @@
 extern crate csv;
 
-use serde_json::{Map, Value};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
+use std::io::{self, BufRead, Write, BufReader};
+use serde_json::{json, Deserializer, Value};
+
+// I misunderstand public structs I think
+pub struct Config {
+    pub get_headers: bool,
+    pub no_header: bool,
+    pub flatten: bool,
+    pub delimiter: u8,
+}
 
 // TODO: move code in main here
 
 // TODO: implement flatten and unwind
 //
-fn flatten_record() {}
+// TODO break up this function
+pub fn write_json_to_csv(config: Config, fields: Option<Vec<&str>>, mut rdr: impl BufRead, wtr: impl Write) -> Result<(), Box<Error>>{
+    let mut csv_writer = csv::WriterBuilder::new()
+        .delimiter(config.delimiter)
+        .from_writer(wtr);
+    let mut stream = Deserializer::from_reader(&mut rdr)
+        .into_iter::<Value>()
+        .map(|item| preprocess(item.unwrap(), config.flatten));
+    if config.get_headers {
+        let mut headers = HashSet::new();
+        for item in stream {
+            for key in item.as_object().unwrap().keys() {
+                headers.insert(key.to_string());
+            }
+        }
+        for item in headers {
+            print!("\"{}\" ", item)
+        }
+        return Ok(());
+    }
+    let first_item = stream.next().unwrap();
+    let headers = match fields {
+        Some(f) => f,
+        None => first_item
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(|a| a.as_str())
+            .collect(),
+    };
+    if !config.no_header {
+        csv_writer.write_record(convert_header_to_csv_record(&headers)?)?;
+    }
+    csv_writer.write_record(convert_json_record_to_csv_record(
+        &headers,
+        &first_item,
+    )?)?;
+    for item in stream {
+        csv_writer.write_record(convert_json_record_to_csv_record(&headers, &item)?)?;
+    }
+    Ok(())
+}
+
+
+fn preprocess(item: Value, flatten: bool) -> Value {
+    if flatten {
+        let mut flat_value: Value = json!({});
+        flatten_json::flatten(&item, &mut flat_value, None, true).unwrap();
+        return flat_value;
+    }
+    item
+}
 
 fn unwind_record() {}
 
