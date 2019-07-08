@@ -2,6 +2,7 @@ extern crate csv;
 
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
+use std::str;
 use std::io::{self, BufRead, Write, BufReader};
 use serde_json::{json, Deserializer, Value};
 
@@ -17,7 +18,8 @@ pub struct Config {
 
 // TODO: implement flatten and unwind
 //
-// TODO break up this function
+// TODO break up this function. use that function that returns self pattern for configuration
+// instead of config struct
 pub fn write_json_to_csv(config: Config, fields: Option<Vec<&str>>, mut rdr: impl BufRead, wtr: impl Write) -> Result<(), Box<Error>>{
     let mut csv_writer = csv::WriterBuilder::new()
         .delimiter(config.delimiter)
@@ -104,3 +106,25 @@ pub fn convert_json_record_to_csv_record(
 }
 
 // TODO: add tests
+//
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn my_test() {
+        let sample_json = r#"{
+            "a": 1
+        }"#.as_bytes();
+        let config = Config {
+            get_headers: false,
+            no_header: false,
+            flatten: false,
+            delimiter: b',',
+        };
+        let mut output = Vec::new();
+        write_json_to_csv(config, None, sample_json, &mut output).unwrap();
+        let str_out = str::from_utf8(&output).unwrap();
+        assert_eq!(str_out, "a\n1\n")
+        }
+}
