@@ -2,3 +2,5 @@ add tests
 clean up comments
 publish crate
 
+implement builder pattern with to writer, to file, to string methods
+
