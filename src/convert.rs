@@ -147,4 +147,26 @@ mod test {
             &Config::default(),
         )
     }
+
+    #[test]
+    fn test_no_header() {
+        let mut config = Config::default();
+        config.no_header = true;
+        run_test(r#"{"a":1}"#, "1\n", &config)
+    }
+
+    #[test]
+    fn test_flatten() {
+        let mut config = Config::default();
+        config.flatten = true;
+        run_test(r#"{"b": {"nested": {"A": 2}}}"#, "b.nested.A\n2\n", &config);
+        run_test(r#"{"array": [1,2] }"#, "array.0,array.1\n1,2\n", &config)
+    }
+
+    #[test]
+    fn test_delimiter() {
+        let mut config = Config::default();
+        config.delimiter = b'|';
+        run_test(r#"{"a":1, "b": 2}"#, "a|b\n1|2\n", &config)
+    }
 }
