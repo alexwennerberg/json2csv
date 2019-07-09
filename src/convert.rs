@@ -1,17 +1,26 @@
 extern crate csv;
 
+use serde_json::{json, Deserializer, Value};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
+use std::io::{self, BufRead, BufReader, Write};
 use std::str;
-use std::io::{self, BufRead, Write, BufReader};
-use serde_json::{json, Deserializer, Value};
 
 // I misunderstand public structs I think
 pub struct Config {
-    pub get_headers: bool,
     pub no_header: bool,
     pub flatten: bool,
     pub delimiter: u8,
+}
+
+impl Default for Config {
+    fn default() -> Config {
+        Config {
+            no_header: false,
+            flatten: false,
+            delimiter: b',',
+        }
+    }
 }
 
 // TODO: move code in main here
@@ -20,25 +29,34 @@ pub struct Config {
 //
 // TODO break up this function. use that function that returns self pattern for configuration
 // instead of config struct
-pub fn write_json_to_csv(config: Config, fields: Option<Vec<&str>>, mut rdr: impl BufRead, wtr: impl Write) -> Result<(), Box<Error>>{
+
+// TODO Return result
+pub fn get_headers(mut rdr: impl BufRead, config: &Config) -> HashSet<String> {
+    // TODO DRY this
+    let stream = Deserializer::from_reader(&mut rdr)
+        .into_iter::<Value>()
+        .map(|item| preprocess(item.unwrap(), config.flatten));
+    let mut headers = HashSet::new();
+    for item in stream {
+        for key in item.as_object().unwrap().keys() {
+            headers.insert(key.to_string());
+        }
+    }
+    headers
+}
+
+pub fn write_json_to_csv(
+    mut rdr: impl BufRead,
+    wtr: impl Write,
+    fields: Option<Vec<&str>>,
+    config: &Config,
+) -> Result<(), Box<Error>> {
     let mut csv_writer = csv::WriterBuilder::new()
         .delimiter(config.delimiter)
         .from_writer(wtr);
     let mut stream = Deserializer::from_reader(&mut rdr)
         .into_iter::<Value>()
         .map(|item| preprocess(item.unwrap(), config.flatten));
-    if config.get_headers {
-        let mut headers = HashSet::new();
-        for item in stream {
-            for key in item.as_object().unwrap().keys() {
-                headers.insert(key.to_string());
-            }
-        }
-        for item in headers {
-            print!("\"{}\" ", item)
-        }
-        return Ok(());
-    }
     let first_item = stream.next().unwrap();
     let headers = match fields {
         Some(f) => f,
@@ -52,16 +70,12 @@ pub fn write_json_to_csv(config: Config, fields: Option<Vec<&str>>, mut rdr: imp
     if !config.no_header {
         csv_writer.write_record(convert_header_to_csv_record(&headers)?)?;
     }
-    csv_writer.write_record(convert_json_record_to_csv_record(
-        &headers,
-        &first_item,
-    )?)?;
+    csv_writer.write_record(convert_json_record_to_csv_record(&headers, &first_item)?)?;
     for item in stream {
         csv_writer.write_record(convert_json_record_to_csv_record(&headers, &item)?)?;
     }
     Ok(())
 }
-
 
 fn preprocess(item: Value, flatten: bool) -> Value {
     if flatten {
@@ -111,20 +125,26 @@ pub fn convert_json_record_to_csv_record(
 mod test {
     use super::*;
 
-    #[test]
-    fn my_test() {
-        let sample_json = r#"{
-            "a": 1
-        }"#.as_bytes();
-        let config = Config {
-            get_headers: false,
-            no_header: false,
-            flatten: false,
-            delimiter: b',',
-        };
+    fn run_test(input: &str, expected: &str, config: &Config) {
+        let mut sample_json = input.as_bytes();
         let mut output = Vec::new();
-        write_json_to_csv(config, None, sample_json, &mut output).unwrap();
+        write_json_to_csv(sample_json, &mut output, None, config).unwrap();
         let str_out = str::from_utf8(&output).unwrap();
-        assert_eq!(str_out, "a\n1\n")
-        }
+        assert_eq!(str_out, expected)
+    }
+
+    #[test]
+    fn simple_test() {
+        run_test(r#"{ "a": 1 }"#, "a\n1\n", &Config::default())
+    }
+
+    #[test]
+    fn test_first_row_params_only() {
+        run_test(
+            r#"{ "a": 1, "b": 2}
+            {"a": 3, "c": 2}"#,
+            "a,b\n1,2\n3,\n",
+            &Config::default(),
+        )
+    }
 }

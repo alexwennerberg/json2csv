@@ -8,7 +8,8 @@ mod convert;
 
 // TODO: parse json array using the code :  https://github.com/serde-rs/json/commit/55f5929c852484b863641fb6f876f4dcb69b96b8
 fn main() -> Result<(), Box<Error>> {
-    let m = App::new("json2csv") .version("0.1.0")
+    let m = App::new("json2csv")
+        .version("0.1.0")
         .author("Alex Wennerberg <alex@alexwennerberg.com>")
         .about("Converts JSON into CSV")
         .arg(Arg::with_name("INPUT").help("Input file. If not present, reads from stdin"))
@@ -73,20 +74,22 @@ fn main() -> Result<(), Box<Error>> {
     //
     // TODO: refactor redundancy
     let csv_config = convert::Config {
-        get_headers: m.is_present("get-headers"),
         no_header: m.is_present("no-header"),
         flatten: m.is_present("flatten"),
         delimiter: m.value_of("delimiter").unwrap().as_bytes()[0],
     };
     let writer = io_writer(m.value_of("output"))?;
-    let fields =  match m.values_of("fields") {
+    let fields = match m.values_of("fields") {
         Some(f) => Some(f.collect()),
-        None => None
+        None => None,
     };
-    convert::write_json_to_csv(csv_config, fields, reader, writer)
+    if m.is_present("get-headers") {
+        convert::get_headers(reader, &csv_config);
+        return Ok(());
+    }
+    convert::write_json_to_csv(reader, writer, fields, &csv_config)
     // todo validate valid delimiter
 }
-
 
 // From https://github.com/BurntSushi/xsv/blob/master/src/config.rs
 fn io_writer(path: Option<&str>) -> io::Result<Box<io::Write + 'static>> {
