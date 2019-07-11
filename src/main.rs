@@ -33,6 +33,13 @@ fn main() -> Result<(), Box<Error>> {
                 .long("flatten"),
         )
         .arg(
+            Arg::with_name("unwind-on")
+                .help("Unwind an array into multiple keys, similar to mongo")
+                .short("U")
+                .long("unwind-on")
+                .takes_value(true),
+        )
+        .arg(
             Arg::with_name("no-header")
                 .help("Exclude the header from the output")
                 .short("H")
@@ -74,6 +81,10 @@ fn main() -> Result<(), Box<Error>> {
     //
     // TODO: refactor redundancy
     let csv_config = convert::Config {
+        unwind_on: match m.value_of("unwind_on") {
+            Some(f) => Option::from(String::from(f)),
+            None => None,
+        },
         no_header: m.is_present("no-header"),
         flatten: m.is_present("flatten"),
         delimiter: m.value_of("delimiter").unwrap().as_bytes()[0],

@@ -1,6 +1,8 @@
-add tests
+add more tests
 clean up comments
+add more csv config options
+modify flatten library
+
 publish crate
 
-implement builder pattern with to writer, to file, to string methods
 

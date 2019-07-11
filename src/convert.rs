@@ -1,9 +1,9 @@
 extern crate csv;
 
 use serde_json::{json, Deserializer, Value};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::error::Error;
-use std::io::{self, BufRead, BufReader, Write};
+use std::io::{BufRead, Write};
 use std::str;
 
 // I misunderstand public structs I think
@@ -11,6 +11,7 @@ pub struct Config {
     pub no_header: bool,
     pub flatten: bool,
     pub delimiter: u8,
+    pub unwind_on: Option<String>,
 }
 
 impl Default for Config {
@@ -19,6 +20,7 @@ impl Default for Config {
             no_header: false,
             flatten: false,
             delimiter: b',',
+            unwind_on: None,
         }
     }
 }
@@ -35,7 +37,7 @@ pub fn get_headers(mut rdr: impl BufRead, config: &Config) -> HashSet<String> {
     // TODO DRY this
     let stream = Deserializer::from_reader(&mut rdr)
         .into_iter::<Value>()
-        .map(|item| preprocess(item.unwrap(), config.flatten));
+        .flat_map(|item| preprocess(item.unwrap(), config.flatten, &config.unwind_on));
     let mut headers = HashSet::new();
     for item in stream {
         for key in item.as_object().unwrap().keys() {
@@ -56,7 +58,7 @@ pub fn write_json_to_csv(
         .from_writer(wtr);
     let mut stream = Deserializer::from_reader(&mut rdr)
         .into_iter::<Value>()
-        .map(|item| preprocess(item.unwrap(), config.flatten));
+        .flat_map(|item| preprocess(item.unwrap(), config.flatten, &config.unwind_on));
     let first_item = stream.next().unwrap();
     let headers = match fields {
         Some(f) => f,
@@ -77,13 +79,22 @@ pub fn write_json_to_csv(
     Ok(())
 }
 
-fn preprocess(item: Value, flatten: bool) -> Value {
-    if flatten {
-        let mut flat_value: Value = json!({});
-        flatten_json::flatten(&item, &mut flat_value, None, true).unwrap();
-        return flat_value;
+fn preprocess(item: Value, flatten: bool, unwind_on: &Option<String>) -> Vec<Value> {
+    let mut container: Vec<Value> = Vec::new();
+    match unwind_on {
+        Some(f) => (), // push all items
+        None => container.push(item),
     }
-    item
+    if flatten {
+        let mut output: Vec<Value> = Vec::new();
+        for item in container {
+            let mut flat_value: Value = json!({});
+            flatten_json::flatten(&item, &mut flat_value, None, true).unwrap();
+            output.push(item);
+        }
+        return output;
+    }
+    container
 }
 
 fn unwind_record() {}
