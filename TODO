@@ -1,6 +1,7 @@
-add tests
+add integration tests testing that it acts like json2csv
 clean up comments
 publish crate
 
-implement builder pattern with to writer, to file, to string methods
-
+add documentation to code
+add more csv configuration options
+benchmarks
