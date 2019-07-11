@@ -1,10 +1,11 @@
-extern crate csv;
-
+extern crate csv; 
 use serde_json::{json, Deserializer, Value};
 use std::collections::HashSet;
 use std::error::Error;
 use std::io::{BufRead, Write};
 use std::str;
+
+mod unwind_json;
 
 // I misunderstand public structs I think
 pub struct Config {
@@ -25,13 +26,11 @@ impl Default for Config {
     }
 }
 
-// TODO: move code in main here
 
-// TODO: implement flatten and unwind
-//
 // TODO break up this function. use that function that returns self pattern for configuration
 // instead of config struct
 
+// TODO: allow unwind_on for multipleitems
 // TODO Return result
 pub fn get_headers(mut rdr: impl BufRead, config: &Config) -> HashSet<String> {
     // TODO DRY this
@@ -82,7 +81,7 @@ pub fn write_json_to_csv(
 fn preprocess(item: Value, flatten: bool, unwind_on: &Option<String>) -> Vec<Value> {
     let mut container: Vec<Value> = Vec::new();
     match unwind_on {
-        Some(f) => (), // push all items
+        Some(f) => container.extend(unwind_json::unwind_json(item, f)), // push all items
         None => container.push(item),
     }
     if flatten {
@@ -96,8 +95,6 @@ fn preprocess(item: Value, flatten: bool, unwind_on: &Option<String>) -> Vec<Val
     }
     container
 }
-
-fn unwind_record() {}
 
 pub fn convert_header_to_csv_record(headers: &Vec<&str>) -> Result<Vec<String>, Box<Error>> {
     let mut record = Vec::new();
