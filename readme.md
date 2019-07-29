@@ -2,7 +2,7 @@
 
 ## Introduction
 
-I love using the https://github.com/zemirco/json2csv library. It's a great tool for following the [Data Science at the Command Line](https://www.datascienceatthecommandline.com/) philosophy. I wanted to attempt a rewrite in Rust in order to improve the performance and add some features I've been missing.
+I love using the Javascript [json2csv](https://github.com/zemirco/json2csv) library. It's a great tool for following the [Data Science at the Command Line](https://www.datascienceatthecommandline.com/) philosophy. I wanted to attempt a rewrite in Rust in order to improve the performance and add some features I've been missing.
 
 ```
 json2csv 0.1.0
@@ -30,14 +30,7 @@ ARGS:
 
 ## Installation
 
-Install via [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html).
-
-
-```bash
-cargo install json2csv
-```
-
-Or build from source:
+This tool is still in alpha. Build from source:
 
 ```bash
 git clone git://github.com/alexwennerberg/json2csv
