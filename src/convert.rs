@@ -1,4 +1,4 @@
-extern crate csv; 
+extern crate csv;
 use serde_json::{json, Deserializer, Value};
 use std::collections::HashSet;
 use std::error::Error;
@@ -25,7 +25,6 @@ impl Default for Config {
         }
     }
 }
-
 
 // TODO break up this function. use that function that returns self pattern for configuration
 // instead of config struct

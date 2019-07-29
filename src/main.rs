@@ -5,7 +5,6 @@ use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader};
 
 mod convert;
-
 // TODO: parse json array using the code :  https://github.com/serde-rs/json/commit/55f5929c852484b863641fb6f876f4dcb69b96b8
 fn main() -> Result<(), Box<Error>> {
     let m = App::new("json2csv")
@@ -62,7 +61,6 @@ fn main() -> Result<(), Box<Error>> {
                 .default_value(","),
         )
         .get_matches();
-
     // read from stdin or file https://stackoverflow.com/a/49964042
     let mut reader: Box<BufRead> = match m.value_of("INPUT") {
         Some(i) => Box::new(BufReader::new(File::open(i).unwrap())),

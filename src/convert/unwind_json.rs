@@ -8,7 +8,7 @@ pub fn unwind_json(wound_json: Value, unwind_on: &String) -> Vec<Value> {
     // split unwind_on by . (or some other value, potentially specified)
     // go through the wound_json looking for the value
     // for every item in the array, clone the array
-    // then replace the value of the map with that item from 
+    // then replace the value of the map with that item from
     // the array
     let mut output = Vec::new();
     output.push(wound_json);
