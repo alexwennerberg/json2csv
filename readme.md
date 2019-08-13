@@ -13,16 +13,14 @@ USAGE:
     json2csv [FLAGS] [OPTIONS] [--] [INPUT]
 
 FLAGS:
-    -F, --flatten        Flatten nested jsons and arrays
-    -g, --get-headers    Read input and list all headers present only
-    -h, --help           Prints help information
-    -H, --no-header      Exclude the header from the output
-    -V, --version        Prints version information
+    -F, --flatten    Flatten nested jsons and arrays
+    -h, --help       Prints help information
+    -V, --version    Prints version information
 
 OPTIONS:
-    -d, --delimiter <delimiter>    Output csv delimiter. Must be a single ASCII character. [default: ,]
     -f, --fields <fields>...       Optionally specify fields to include
     -o, --output <output>          Output file. If not present, writes to stdout
+    -U, --unwind-on <unwind-on>    Unwind an array into multiple keys, similar to mongo
 
 ARGS:
     <INPUT>    Input file. If not present, reads from stdin
@@ -48,11 +46,10 @@ If your json structure is not uniform, you may want to run `json2csv input.json 
 
 If your json is nested, you may want to use [jq](https://stedolan.github.io/jq/) to do some pre-processing. `--flatten` will flatten all nested arrays in a json, such that they will have the format field.nested_field or field.nested_array.0, etc. Combine this with `--get-headers` to get all nested values.
 
+I don't include any of the formatting options that are present in the Javascript json2csv. This is following the Do One Thing and Do It Well principle -- this should just convert JSON to CSV, for any sort of reformatting or post-processing you can pipe the data into BurntSushi's excellent [xsv](https://github.com/BurntSushi/xsv) library. 
+
 Submit a pull request for any feature requests!
 
 ## Benchmarks
 
 TBD.
-
-Thanks to Andrew Gallant's incredible work on [rust-csv](https://github.com/BurntSushi/rust-csv) and [xsv](https://github.com/BurntSushi/xsv), which provided a lot of tools and inspiration!
-

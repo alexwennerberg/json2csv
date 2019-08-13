@@ -20,12 +20,6 @@ fn main() -> Result<(), Box<Error>> {
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("get-headers")
-                .help("Read input and list all headers present only")
-                .short("g")
-                .long("get-headers"),
-        )
-        .arg(
             Arg::with_name("flatten")
                 .help("Flatten nested jsons and arrays")
                 .short("F")
@@ -39,26 +33,12 @@ fn main() -> Result<(), Box<Error>> {
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("no-header")
-                .help("Exclude the header from the output")
-                .short("H")
-                .long("no-header"),
-        )
-        .arg(
             Arg::with_name("fields")
                 .help("Optionally specify fields to include")
                 .short("f")
                 .takes_value(true)
                 .multiple(true)
                 .long("fields"),
-        )
-        .arg(
-            Arg::with_name("delimiter")
-                .help("Output csv delimiter. Must be a single ASCII character.")
-                .short("d")
-                .long("delimiter")
-                .takes_value(true)
-                .default_value(","),
         )
         .get_matches();
     // read from stdin or file https://stackoverflow.com/a/49964042
@@ -83,9 +63,7 @@ fn main() -> Result<(), Box<Error>> {
             Some(f) => Option::from(String::from(f)),
             None => None,
         },
-        no_header: m.is_present("no-header"),
         flatten: m.is_present("flatten"),
-        delimiter: m.value_of("delimiter").unwrap().as_bytes()[0],
     };
     let writer = io_writer(m.value_of("output"))?;
     let fields = match m.values_of("fields") {

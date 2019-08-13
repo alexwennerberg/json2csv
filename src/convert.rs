@@ -8,19 +8,16 @@ use std::str;
 mod unwind_json;
 
 // I misunderstand public structs I think
+// TODO remove config object
 pub struct Config {
-    pub no_header: bool,
     pub flatten: bool,
-    pub delimiter: u8,
     pub unwind_on: Option<String>,
 }
 
 impl Default for Config {
     fn default() -> Config {
         Config {
-            no_header: false,
             flatten: false,
-            delimiter: b',',
             unwind_on: None,
         }
     }
@@ -52,7 +49,6 @@ pub fn write_json_to_csv(
     config: &Config,
 ) -> Result<(), Box<Error>> {
     let mut csv_writer = csv::WriterBuilder::new()
-        .delimiter(config.delimiter)
         .from_writer(wtr);
     let mut stream = Deserializer::from_reader(&mut rdr)
         .into_iter::<Value>()
@@ -67,9 +63,7 @@ pub fn write_json_to_csv(
             .map(|a| a.as_str())
             .collect(),
     };
-    if !config.no_header {
-        csv_writer.write_record(convert_header_to_csv_record(&headers)?)?;
-    }
+    csv_writer.write_record(convert_header_to_csv_record(&headers)?)?;
     csv_writer.write_record(convert_json_record_to_csv_record(&headers, &first_item)?)?;
     for item in stream {
         csv_writer.write_record(convert_json_record_to_csv_record(&headers, &item)?)?;
