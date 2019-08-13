@@ -71,6 +71,9 @@ pub fn write_json_to_csv(
     Ok(())
 }
 
+/// Handle the flattening and unwinding of a value 
+/// Note that when unwinding a large array, all the array values
+/// are held in memory. This could be improved.
 fn preprocess(item: Value, flatten: bool, unwind_on: &Option<String>) -> Vec<Value> {
     let mut container: Vec<Value> = Vec::new();
     match unwind_on {
@@ -82,7 +85,7 @@ fn preprocess(item: Value, flatten: bool, unwind_on: &Option<String>) -> Vec<Val
         for item in container {
             let mut flat_value: Value = json!({});
             flatten_json::flatten(&item, &mut flat_value, None, true).unwrap();
-            output.push(item);
+            output.push(flat_value);
         }
         return output;
     }
@@ -150,24 +153,10 @@ mod test {
     }
 
     #[test]
-    fn test_no_header() {
-        let mut config = Config::default();
-        config.no_header = true;
-        run_test(r#"{"a":1}"#, "1\n", &config)
-    }
-
-    #[test]
     fn test_flatten() {
         let mut config = Config::default();
         config.flatten = true;
         run_test(r#"{"b": {"nested": {"A": 2}}}"#, "b.nested.A\n2\n", &config);
         run_test(r#"{"array": [1,2] }"#, "array.0,array.1\n1,2\n", &config)
-    }
-
-    #[test]
-    fn test_delimiter() {
-        let mut config = Config::default();
-        config.delimiter = b'|';
-        run_test(r#"{"a":1, "b": 2}"#, "a|b\n1|2\n", &config)
     }
 }

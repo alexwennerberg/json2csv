@@ -34,7 +34,7 @@ fn main() -> Result<(), Box<Error>> {
         )
         .arg(
             Arg::with_name("fields")
-                .help("Optionally specify fields to include")
+                .help("Optionally specify fields to include. If not specified, pulls fields from first record.")
                 .short("f")
                 .takes_value(true)
                 .multiple(true)
@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<Error>> {
     //
     // TODO: refactor redundancy
     let csv_config = convert::Config {
-        unwind_on: match m.value_of("unwind_on") {
+        unwind_on: match m.value_of("unwind-on") {
             Some(f) => Option::from(String::from(f)),
             None => None,
         },
