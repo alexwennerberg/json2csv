@@ -1,8 +1,3 @@
-add integration tests testing that it acts like json2csv
 add more tests
-clean up comments
-add more csv config options
-modify flatten library
+add benchmarks
 publish crate
-add documentation to code
-benchmarks

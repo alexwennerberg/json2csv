@@ -1,3 +1,5 @@
+/// Command line interface that handles parsing input
+
 use clap::{App, Arg};
 
 use std::error::Error;
@@ -6,6 +8,7 @@ use std::io::{self, BufRead, BufReader};
 
 mod convert;
 // TODO: parse json array using the code :  https://github.com/serde-rs/json/commit/55f5929c852484b863641fb6f876f4dcb69b96b8
+
 fn main() -> Result<(), Box<Error>> {
     let m = App::new("json2csv")
         .version("0.1.0")
@@ -42,22 +45,12 @@ fn main() -> Result<(), Box<Error>> {
         )
         .get_matches();
     // read from stdin or file https://stackoverflow.com/a/49964042
+    // TODO: Don't panic on nonexistent file
     let mut reader: Box<BufRead> = match m.value_of("INPUT") {
         Some(i) => Box::new(BufReader::new(File::open(i).unwrap())),
         None => Box::new(BufReader::new(io::stdin())),
     };
 
-    //output writer with csv settings
-
-    // TODO: set csv configuration variables via command line:
-    // https://docs.rs/csv/1.0.7/csv/struct.WriterBuilder.html
-    // TODO: Implement these options:
-    // -u --unwind
-    // -S --flatten-separator
-    // additional csv settings?
-    // TODO: map unwind and flatten transformations here
-    //
-    // TODO: refactor redundancy
     let unwind_on = match m.value_of("unwind-on") {
             Some(f) => Option::from(String::from(f)),
             None => None,
@@ -73,7 +66,6 @@ fn main() -> Result<(), Box<Error>> {
         return Ok(());
     }
     convert::write_json_to_csv(reader, writer, fields, flatten, unwind_on)
-    // todo validate valid delimiter
 }
 
 // From https://github.com/BurntSushi/xsv/blob/master/src/config.rs

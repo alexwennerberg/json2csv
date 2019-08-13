@@ -1,3 +1,4 @@
+/// Tools to convert a json to a csv
 extern crate csv;
 use serde_json::{json, Deserializer, Value};
 use std::collections::HashSet;
@@ -7,13 +8,10 @@ use std::str;
 
 mod unwind_json;
 
-// TODO break up this function. use that function that returns self pattern for configuration
-// instead of config struct
-
-// TODO: allow unwind_on for multipleitems
-// TODO Return result
+/// Get the headers from the json, if fields are not uniform throughout. Works with
+/// Unwind and flatten. Use this function and then specify fields explicitly to 
+/// write_json_to_csv  if fields are not uniform
 pub fn get_headers(mut rdr: impl BufRead, flatten: bool, unwind_on: Option<String>) -> HashSet<String> {
-    // TODO DRY this
     let stream = Deserializer::from_reader(&mut rdr)
         .into_iter::<Value>()
         .flat_map(|item| preprocess(item.unwrap(), flatten, &unwind_on));
@@ -91,7 +89,6 @@ pub fn convert_json_record_to_csv_record(
     headers: &Vec<&str>,
     json_map: &Value,
 ) -> Result<Vec<String>, Box<Error>> {
-    // todo move writer away from this function
     // iterate over headers
     // if header is present in record, add it
     // if not, blank string
