@@ -1,4 +1,4 @@
-use serde_json::{json, Deserializer, Value, Map};
+use serde_json::{json, Value};
 
 /// Takes a json and "Unwinds" it, based roughly on the behavior of
 /// https://docs.mongodb.com/manual/reference/operator/aggregation/unwind/

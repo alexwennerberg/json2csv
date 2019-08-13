@@ -58,23 +58,21 @@ fn main() -> Result<(), Box<Error>> {
     // TODO: map unwind and flatten transformations here
     //
     // TODO: refactor redundancy
-    let csv_config = convert::Config {
-        unwind_on: match m.value_of("unwind-on") {
+    let unwind_on = match m.value_of("unwind-on") {
             Some(f) => Option::from(String::from(f)),
             None => None,
-        },
-        flatten: m.is_present("flatten"),
-    };
+        };
+    let flatten = m.is_present("flatten");
     let writer = io_writer(m.value_of("output"))?;
     let fields = match m.values_of("fields") {
         Some(f) => Some(f.collect()),
         None => None,
     };
     if m.is_present("get-headers") {
-        convert::get_headers(reader, &csv_config);
+        convert::get_headers(reader, flatten, unwind_on);
         return Ok(());
     }
-    convert::write_json_to_csv(reader, writer, fields, &csv_config)
+    convert::write_json_to_csv(reader, writer, fields, flatten, unwind_on)
     // todo validate valid delimiter
 }
 

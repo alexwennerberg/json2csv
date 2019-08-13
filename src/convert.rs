@@ -7,32 +7,16 @@ use std::str;
 
 mod unwind_json;
 
-// I misunderstand public structs I think
-// TODO remove config object
-pub struct Config {
-    pub flatten: bool,
-    pub unwind_on: Option<String>,
-}
-
-impl Default for Config {
-    fn default() -> Config {
-        Config {
-            flatten: false,
-            unwind_on: None,
-        }
-    }
-}
-
 // TODO break up this function. use that function that returns self pattern for configuration
 // instead of config struct
 
 // TODO: allow unwind_on for multipleitems
 // TODO Return result
-pub fn get_headers(mut rdr: impl BufRead, config: &Config) -> HashSet<String> {
+pub fn get_headers(mut rdr: impl BufRead, flatten: bool, unwind_on: Option<String>) -> HashSet<String> {
     // TODO DRY this
     let stream = Deserializer::from_reader(&mut rdr)
         .into_iter::<Value>()
-        .flat_map(|item| preprocess(item.unwrap(), config.flatten, &config.unwind_on));
+        .flat_map(|item| preprocess(item.unwrap(), flatten, &unwind_on));
     let mut headers = HashSet::new();
     for item in stream {
         for key in item.as_object().unwrap().keys() {
@@ -42,17 +26,20 @@ pub fn get_headers(mut rdr: impl BufRead, config: &Config) -> HashSet<String> {
     headers
 }
 
+/// Take a reader and a writer, read the json from the reader,
+/// write to the writer. Perform flatten and unwind transofmrations
 pub fn write_json_to_csv(
     mut rdr: impl BufRead,
     wtr: impl Write,
     fields: Option<Vec<&str>>,
-    config: &Config,
+    flatten: bool,
+    unwind_on: Option<String>
 ) -> Result<(), Box<Error>> {
     let mut csv_writer = csv::WriterBuilder::new()
         .from_writer(wtr);
     let mut stream = Deserializer::from_reader(&mut rdr)
         .into_iter::<Value>()
-        .flat_map(|item| preprocess(item.unwrap(), config.flatten, &config.unwind_on));
+        .flat_map(|item| preprocess(item.unwrap(), flatten, &unwind_on));
     let first_item = stream.next().unwrap();
     let headers = match fields {
         Some(f) => f,
@@ -123,23 +110,21 @@ pub fn convert_json_record_to_csv_record(
     Ok(record)
 }
 
-// TODO: add tests
-//
 #[cfg(test)]
 mod test {
     use super::*;
 
-    fn run_test(input: &str, expected: &str, config: &Config) {
+    fn run_test(input: &str,
+        expected: &str,
+        fields: Option<Vec<&str>>,
+        flatten: bool,
+        unwind_on: Option<String>
+        ) { 
         let mut sample_json = input.as_bytes();
         let mut output = Vec::new();
-        write_json_to_csv(sample_json, &mut output, None, config).unwrap();
+        write_json_to_csv(sample_json, &mut output, fields, flatten, unwind_on).unwrap();
         let str_out = str::from_utf8(&output).unwrap();
         assert_eq!(str_out, expected)
-    }
-
-    #[test]
-    fn simple_test() {
-        run_test(r#"{ "a": 1 }"#, "a\n1\n", &Config::default())
     }
 
     #[test]
@@ -148,15 +133,30 @@ mod test {
             r#"{ "a": 1, "b": 2}
             {"a": 3, "c": 2}"#,
             "a,b\n1,2\n3,\n",
-            &Config::default(),
+            None,
+            false,
+            None
         )
     }
 
     #[test]
     fn test_flatten() {
-        let mut config = Config::default();
-        config.flatten = true;
-        run_test(r#"{"b": {"nested": {"A": 2}}}"#, "b.nested.A\n2\n", &config);
-        run_test(r#"{"array": [1,2] }"#, "array.0,array.1\n1,2\n", &config)
+        run_test(r#"{"b": {"nested": {"A": 2}}}"#, "b.nested.A\n2\n", None, true, None);
+        run_test(r#"{"array": [1,2] }"#, "array.0,array.1\n1,2\n", None, true, None);
+    }
+
+    #[test]
+    fn test_unwind() {
+        run_test(r#"{"b": [1,2], "a": 3}"#, "a,b\n3,1\n3,2\n", None, false, Option::from(String::from("b")));
+    }
+
+    #[test]
+    fn test_fields() {
+        run_test(r#"{"a": "a", "b": "b"}"#, "a\na\n", Option::from(vec!("a")), false, None)
+    }
+
+    #[test]
+    fn test_unwind_and_flatten() {
+        run_test(r#"{"b": [1,2], "a": 3}"#, "a,b\n3,1\n3,2\n", None, true, Option::from(String::from("b")));
     }
 }
