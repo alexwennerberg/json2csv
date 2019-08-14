@@ -2,4 +2,5 @@
 **/*.rs.bk
 large_sample.json
 /tests/fixtures/big.json
+/benchmarks/sample.json
 *.swp
