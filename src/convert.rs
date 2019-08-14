@@ -26,6 +26,7 @@ pub fn get_headers(mut rdr: impl BufRead, flatten: bool, unwind_on: Option<Strin
 
 /// Take a reader and a writer, read the json from the reader,
 /// write to the writer. Perform flatten and unwind transofmrations
+/// Sorts output fields by default
 pub fn write_json_to_csv(
     mut rdr: impl BufRead,
     wtr: impl Write,
