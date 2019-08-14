@@ -155,6 +155,6 @@ mod test {
 
     #[test]
     fn test_unwind_and_flatten() {
-        run_test(r#"{"b": [1,2], "a": 3}"#, "a,b\n3,1\n3,2\n", None, true, Option::from(String::from("b")));
+        run_test(r#"{"b": [{"c": 1},{"c": 2}], "a": {"c": 3}}"#, "a.c,b.c\n3,1\n3,2\n", None, true, Option::from(String::from("b")));
     }
 }
