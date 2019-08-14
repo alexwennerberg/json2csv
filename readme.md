@@ -30,7 +30,13 @@ ARGS:
 
 ## Installation
 
-This tool is still in alpha. Build from source:
+This tool is still in alpha. Install from cargo:
+
+```bash
+cargo install json2csv
+```
+
+Or build from source:
 
 ```bash
 git clone git://github.com/alexwennerberg/json2csv
