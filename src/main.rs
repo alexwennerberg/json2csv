@@ -1,5 +1,4 @@
 /// Command line interface that handles parsing input
-
 use clap::{App, Arg};
 
 use std::error::Error;
@@ -42,6 +41,12 @@ fn main() -> Result<(), Box<Error>> {
                 .takes_value(true)
                 .multiple(true)
                 .long("fields"),
+        ).arg(
+            Arg::with_name("delimiter")
+                .help("Optionally specify delimiter to use. Use $'\\t' for tab. If not specified, uses comma.")
+                .short("d")
+                .takes_value(true)
+                .long("delimiter"),
         )
         .get_matches();
     // read from stdin or file https://stackoverflow.com/a/49964042
@@ -52,20 +57,25 @@ fn main() -> Result<(), Box<Error>> {
     };
 
     let unwind_on = match m.value_of("unwind-on") {
-            Some(f) => Option::from(String::from(f)),
-            None => None,
-        };
+        Some(f) => Option::from(String::from(f)),
+        None => None,
+    };
     let flatten = m.is_present("flatten");
     let writer = io_writer(m.value_of("output"))?;
     let fields = match m.values_of("fields") {
         Some(f) => Some(f.collect()),
         None => None,
     };
+    //default to comma
+    let delimiter = match m.value_of("delimiter") {
+        Some(d) => Some(String::from(d)),
+        None => None,
+    };
     if m.is_present("get-headers") {
         convert::get_headers(reader, flatten, unwind_on);
         return Ok(());
     }
-    convert::write_json_to_csv(reader, writer, fields, flatten, unwind_on)
+    convert::write_json_to_csv(reader, writer, fields, delimiter, flatten, unwind_on)
 }
 
 // From https://github.com/BurntSushi/xsv/blob/master/src/config.rs
