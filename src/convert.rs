@@ -9,9 +9,13 @@ use std::str;
 mod unwind_json;
 
 /// Get the headers from the json, if fields are not uniform throughout. Works with
-/// Unwind and flatten. Use this function and then specify fields explicitly to 
+/// Unwind and flatten. Use this function and then specify fields explicitly to
 /// write_json_to_csv  if fields are not uniform
-pub fn get_headers(mut rdr: impl BufRead, flatten: bool, unwind_on: Option<String>) -> HashSet<String> {
+pub fn get_headers(
+    mut rdr: impl BufRead,
+    flatten: bool,
+    unwind_on: Option<String>,
+) -> HashSet<String> {
     let stream = Deserializer::from_reader(&mut rdr)
         .into_iter::<Value>()
         .flat_map(|item| preprocess(item.unwrap(), flatten, &unwind_on));
@@ -31,11 +35,13 @@ pub fn write_json_to_csv(
     mut rdr: impl BufRead,
     wtr: impl Write,
     fields: Option<Vec<&str>>,
+    delimiter: Option<String>,
     flatten: bool,
-    unwind_on: Option<String>
+    unwind_on: Option<String>,
 ) -> Result<(), Box<Error>> {
     let mut csv_writer = csv::WriterBuilder::new()
-        .from_writer(wtr);
+    .delimiter(delimiter.unwrap_or(",".to_string()).as_bytes()[0])
+    .from_writer(wtr);
     let mut stream = Deserializer::from_reader(&mut rdr)
         .into_iter::<Value>()
         .flat_map(|item| preprocess(item.unwrap(), flatten, &unwind_on));
@@ -57,7 +63,7 @@ pub fn write_json_to_csv(
     Ok(())
 }
 
-/// Handle the flattening and unwinding of a value 
+/// Handle the flattening and unwinding of a value
 /// Note that when unwinding a large array, all the array values
 /// are held in memory. This could be improved.
 fn preprocess(item: Value, flatten: bool, unwind_on: &Option<String>) -> Vec<Value> {
@@ -112,12 +118,13 @@ pub fn convert_json_record_to_csv_record(
 mod test {
     use super::*;
 
-    fn run_test(input: &str,
+    fn run_test(
+        input: &str,
         expected: &str,
         fields: Option<Vec<&str>>,
         flatten: bool,
-        unwind_on: Option<String>
-        ) { 
+        unwind_on: Option<String>,
+    ) {
         let mut sample_json = input.as_bytes();
         let mut output = Vec::new();
         write_json_to_csv(sample_json, &mut output, fields, flatten, unwind_on).unwrap();
@@ -133,28 +140,58 @@ mod test {
             "a,b\n1,2\n3,\n",
             None,
             false,
-            None
+            None,
         )
     }
 
     #[test]
     fn test_flatten() {
-        run_test(r#"{"b": {"nested": {"A": 2}}}"#, "b.nested.A\n2\n", None, true, None);
-        run_test(r#"{"array": [1,2] }"#, "array.0,array.1\n1,2\n", None, true, None);
+        run_test(
+            r#"{"b": {"nested": {"A": 2}}}"#,
+            "b.nested.A\n2\n",
+            None,
+            true,
+            None,
+        );
+        run_test(
+            r#"{"array": [1,2] }"#,
+            "array.0,array.1\n1,2\n",
+            None,
+            true,
+            None,
+        );
     }
 
     #[test]
     fn test_unwind() {
-        run_test(r#"{"b": [1,2], "a": 3}"#, "a,b\n3,1\n3,2\n", None, false, Option::from(String::from("b")));
+        run_test(
+            r#"{"b": [1,2], "a": 3}"#,
+            "a,b\n3,1\n3,2\n",
+            None,
+            false,
+            Option::from(String::from("b")),
+        );
     }
 
     #[test]
     fn test_fields() {
-        run_test(r#"{"a": "a", "b": "b"}"#, "a\na\n", Option::from(vec!("a")), false, None)
+        run_test(
+            r#"{"a": "a", "b": "b"}"#,
+            "a\na\n",
+            Option::from(vec!["a"]),
+            false,
+            None,
+        )
     }
 
     #[test]
     fn test_unwind_and_flatten() {
-        run_test(r#"{"b": [{"c": 1},{"c": 2}], "a": {"c": 3}}"#, "a.c,b.c\n3,1\n3,2\n", None, true, Option::from(String::from("b")));
+        run_test(
+            r#"{"b": [{"c": 1},{"c": 2}], "a": {"c": 3}}"#,
+            "a.c,b.c\n3,1\n3,2\n",
+            None,
+            true,
+            Option::from(String::from("b")),
+        );
     }
 }
