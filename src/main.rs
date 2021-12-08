@@ -1,5 +1,4 @@
 /// Command line interface that handles parsing input
-
 use clap::{App, Arg};
 
 use std::error::Error;
@@ -36,12 +35,25 @@ fn main() -> Result<(), Box<Error>> {
                 .takes_value(true),
         )
         .arg(
+            Arg::with_name("samples")
+                .help("Analyze first N number of lines for header fields, default to 1")
+                .short("N")
+                .long("sample-lines")
+                .takes_value(true),
+        )
+        .arg(
             Arg::with_name("fields")
                 .help("Optionally specify fields to include. If not specified, pulls fields from first record.")
                 .short("f")
                 .takes_value(true)
                 .multiple(true)
                 .long("fields"),
+        ).arg(
+            Arg::with_name("delimiter")
+                .help("Optionally specify delimiter to use. Use $'\\t' for tab. If not specified, uses comma.")
+                .short("d")
+                .takes_value(true)
+                .long("delimiter"),
         )
         .get_matches();
     // read from stdin or file https://stackoverflow.com/a/49964042
@@ -52,20 +64,26 @@ fn main() -> Result<(), Box<Error>> {
     };
 
     let unwind_on = match m.value_of("unwind-on") {
-            Some(f) => Option::from(String::from(f)),
-            None => None,
-        };
+        Some(f) => Option::from(String::from(f)),
+        None => None,
+    };
     let flatten = m.is_present("flatten");
     let writer = io_writer(m.value_of("output"))?;
     let fields = match m.values_of("fields") {
         Some(f) => Some(f.collect()),
         None => None,
     };
-    if m.is_present("get-headers") {
-        convert::get_headers(reader, flatten, unwind_on);
-        return Ok(());
-    }
-    convert::write_json_to_csv(reader, writer, fields, flatten, unwind_on)
+    //default to comma
+    let delimiter = match m.value_of("delimiter") {
+        Some(d) => Some(String::from(d)),
+        None => None,
+    };
+    //default to 1
+    let samples = match m.value_of("samples") {
+        Some(n) => Some(n.parse::<usize>().unwrap()),
+        None => Some(1),
+    };
+    convert::write_json_to_csv(reader, writer, fields, delimiter, flatten, unwind_on,samples)
 }
 
 // From https://github.com/BurntSushi/xsv/blob/master/src/config.rs
