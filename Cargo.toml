@@ -11,4 +11,5 @@ serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 csv = "1"
 clap = "2"
+linked_hash_set = "0.x"
 rust-flatten-json = "0.1.0"

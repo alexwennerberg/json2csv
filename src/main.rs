@@ -80,9 +80,10 @@ fn main() -> Result<(), Box<Error>> {
     };
     //default to 1
     let samples = match m.value_of("samples") {
-        Some(n) => Some(n.parse::<usize>().unwrap()),
+        Some(s) => Some(s.parse::<u32>().unwrap()),
         None => Some(1),
     };
+
     convert::write_json_to_csv(reader, writer, fields, delimiter, flatten, unwind_on,samples)
 }
 
