@@ -21,6 +21,7 @@ FLAGS:
 
 OPTIONS:
     -f, --fields <fields>...       Optionally specify fields to include
+    -d, --delimiter <delimiter>    Optionally specify delimiter to use. Use $'\t' for tab. If not specified, uses comma.
     -o, --output <output>          Output file. If not present, writes to stdout
     -U, --unwind-on <unwind-on>    Unwind an array into multiple keys, similar to mongo
 

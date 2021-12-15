@@ -50,7 +50,7 @@ pub fn write_json_to_csv(
         None => detected_headers.iter().map(|x| x.as_str()).collect(),
     };
     //print to stderr
-    eprintln!("headers: {:?}", headers);
+    //eprintln!("headers: {:?}", headers);
     csv_writer.write_record(convert_header_to_csv_record(&headers) ?)?;
     for item in cached_values{
         csv_writer.write_record(convert_json_record_to_csv_record(&headers, &item)?)?;
