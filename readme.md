@@ -23,6 +23,7 @@ OPTIONS:
     -f, --fields <fields>...       Optionally specify fields to include
     -d, --delimiter <delimiter>    Optionally specify delimiter to use. Use $'\t' for tab. If not specified, uses comma.
     -o, --output <output>          Output file. If not present, writes to stdout
+    -N, --sample-lines <samples>    Analyze first N number of lines for header fields, default to 1
     -U, --unwind-on <unwind-on>    Unwind an array into multiple keys, similar to mongo
 
 ARGS:
