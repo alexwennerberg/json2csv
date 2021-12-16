@@ -7,8 +7,8 @@ description = "A tool to convert JSON to CSV"
 license = "MIT"
 
 [dependencies]
-serde_json = "1.0"
-serde = { version = "1.0", features = ["derive"] }
+serde_json = { version= "1.x",features= ["preserve_order"]}
+serde = { version = "1.x", features = ["derive"] }
 csv = "1"
 clap = "2"
 linked_hash_set = "0.x"

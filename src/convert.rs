@@ -24,6 +24,7 @@ pub fn write_json_to_csv(
 ) -> Result<(), Box<Error>> {
     let mut csv_writer = csv::WriterBuilder::new()
         .delimiter(delimiter.unwrap_or(",".to_string()).as_bytes()[0])
+        .double_quote(false)
         .from_writer(wtr);
     let stream = Deserializer::from_reader(&mut rdr)
         .into_iter::<Value>()
@@ -40,8 +41,8 @@ pub fn write_json_to_csv(
         if count > samples.unwrap() {
             break;
         }
-        for key in item.as_object().unwrap().keys() {
-            detected_headers.insert(key.to_string());
+        for (key,_obj) in item.as_object().unwrap().iter() {
+            detected_headers.insert_if_absent(key.to_string());
         }
         
     }
@@ -49,12 +50,12 @@ pub fn write_json_to_csv(
         Some(f) => f,
         None => detected_headers.iter().map(|x| x.as_str()).collect(),
     };
-    //print to stderr
-    //eprintln!("headers: {:?}", headers);
     csv_writer.write_record(convert_header_to_csv_record(&headers) ?)?;
     for item in cached_values{
         csv_writer.write_record(convert_json_record_to_csv_record(&headers, &item)?)?;
     }
+    //free cached values
+    cached_values=vec![];
     let stream = Deserializer::from_reader(&mut rdr)
         .into_iter::<Value>()
         .flat_map(|item| preprocess(item.unwrap(), flatten, &unwind_on));
