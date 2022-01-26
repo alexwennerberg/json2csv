@@ -1,14 +1,13 @@
 /// Tools to convert a json to a csv
 extern crate csv;
 extern crate linked_hash_set;
-use serde_json::{json, Deserializer, Value};
 use linked_hash_set::LinkedHashSet;
+use serde_json::{json, Deserializer, Value};
 use std::error::Error;
 use std::io::{BufRead, Write};
 use std::str;
 
 mod unwind_json;
-
 
 /// Take a reader and a writer, read the json from the reader,
 /// write to the writer. Perform flatten and unwind transofmrations
@@ -21,10 +20,11 @@ pub fn write_json_to_csv(
     flatten: bool,
     unwind_on: Option<String>,
     samples: Option<u32>,
-) -> Result<(), Box<Error>> {
+    double_quote: bool,
+) -> Result<(), Box<dyn Error>> {
     let mut csv_writer = csv::WriterBuilder::new()
         .delimiter(delimiter.unwrap_or(",".to_string()).as_bytes()[0])
-        .double_quote(false)
+        .double_quote(double_quote)
         .from_writer(wtr);
     let stream = Deserializer::from_reader(&mut rdr)
         .into_iter::<Value>()
@@ -41,21 +41,20 @@ pub fn write_json_to_csv(
         if count > samples.unwrap() {
             break;
         }
-        for (key,_obj) in item.as_object().unwrap().iter() {
+        for (key, _obj) in item.as_object().unwrap().iter() {
             detected_headers.insert_if_absent(key.to_string());
         }
-        
     }
     let headers = match fields {
         Some(f) => f,
         None => detected_headers.iter().map(|x| x.as_str()).collect(),
     };
-    csv_writer.write_record(convert_header_to_csv_record(&headers) ?)?;
-    for item in cached_values{
+    csv_writer.write_record(convert_header_to_csv_record(&headers)?)?;
+    for item in cached_values {
         csv_writer.write_record(convert_json_record_to_csv_record(&headers, &item)?)?;
     }
     //free cached values
-    cached_values=vec![];
+    cached_values = vec![];
     let stream = Deserializer::from_reader(&mut rdr)
         .into_iter::<Value>()
         .flat_map(|item| preprocess(item.unwrap(), flatten, &unwind_on));
@@ -86,7 +85,7 @@ fn preprocess(item: Value, flatten: bool, unwind_on: &Option<String>) -> Vec<Val
     container
 }
 
-pub fn convert_header_to_csv_record(headers: &Vec<&str>) -> Result<Vec<String>, Box<Error>> {
+pub fn convert_header_to_csv_record(headers: &Vec<&str>) -> Result<Vec<String>, Box<dyn Error>> {
     let mut record = Vec::new();
     for item in headers {
         record.push(String::from(item.clone()));
@@ -97,7 +96,7 @@ pub fn convert_header_to_csv_record(headers: &Vec<&str>) -> Result<Vec<String>, 
 pub fn convert_json_record_to_csv_record(
     headers: &Vec<&str>,
     json_map: &Value,
-) -> Result<Vec<String>, Box<Error>> {
+) -> Result<Vec<String>, Box<dyn Error>> {
     // iterate over headers
     // if header is present in record, add it
     // if not, blank string
@@ -128,10 +127,21 @@ mod test {
         flatten: bool,
         unwind_on: Option<String>,
         samples: Option<u32>,
+        double_quote: bool,
     ) {
         let sample_json = input.as_bytes();
         let mut output = Vec::new();
-        write_json_to_csv(sample_json, &mut output, fields, delimiter, flatten, unwind_on, samples).unwrap();
+        write_json_to_csv(
+            sample_json,
+            &mut output,
+            fields,
+            delimiter,
+            flatten,
+            unwind_on,
+            samples,
+            double_quote,
+        )
+        .unwrap();
         let str_out = str::from_utf8(&output).unwrap();
         assert_eq!(str_out, expected)
     }
@@ -147,6 +157,7 @@ mod test {
             false,
             None,
             Some(1),
+            false
         )
     }
 
@@ -159,7 +170,8 @@ mod test {
             None,
             true,
             None,
-            Some(1)
+            Some(1),
+            false
         );
         run_test(
             r#"{"array": [1,2] }"#,
@@ -169,6 +181,7 @@ mod test {
             true,
             None,
             Some(1),
+            false
         );
     }
 
@@ -181,7 +194,8 @@ mod test {
             None,
             false,
             Option::from(String::from("b")),
-            Some(1)
+            Some(1),
+            false
         );
     }
 
@@ -195,6 +209,7 @@ mod test {
             false,
             None,
             Some(1),
+            false
         )
     }
 
@@ -208,6 +223,7 @@ mod test {
             true,
             Option::from(String::from("b")),
             Some(1),
+            false
         );
     }
 }
