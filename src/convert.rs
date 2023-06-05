@@ -41,7 +41,7 @@ pub fn write_json_to_csv(
         if count > samples.unwrap() {
             break;
         }
-        for (key, _obj) in item.as_object().unwrap().iter() {
+        for (key, _obj) in item.as_object().expect("root element is not an object -- you may be passing in a JSON array. Split up json records using a tool like jq '.[]'").iter() {
             detected_headers.insert_if_absent(key.to_string());
         }
     }
