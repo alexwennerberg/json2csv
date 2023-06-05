@@ -21,7 +21,9 @@ FLAGS:
 
 OPTIONS:
     -f, --fields <fields>...       Optionally specify fields to include
+    -d, --delimiter <delimiter>    Optionally specify delimiter to use. Use $'\t' for tab. If not specified, uses comma.
     -o, --output <output>          Output file. If not present, writes to stdout
+    -N, --sample-lines <samples>   Analyze first N number of lines for header fields, default to 1
     -U, --unwind-on <unwind-on>    Unwind an array into multiple keys, similar to mongo
 
 ARGS:
@@ -50,7 +52,7 @@ Note that if you are using multiple tools named json2csv, you'll want to uninsta
 
 For simple, flat jsons with a uniform structure, simply run `json2csv input.json`
 
-If your json structure is not uniform, you may want to run `json2csv input.json --get-headers` first, which will list all the headers. Then pass these headers like `json2csv input.json --fields foo bar`
+If your json structure is not uniform, you may want use -N option such as `json2csv input.json -N #num`, which will use the first N number of lines to detect headers.
 
 If your json is nested, you may want to use [jq](https://stedolan.github.io/jq/) to do some pre-processing. `--flatten` will flatten all nested arrays in a json, such that they will have the format field.nested_field or field.nested_array.0, etc. Combine this with `--get-headers` to get all nested values. 
 
