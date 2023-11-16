@@ -4,7 +4,7 @@ extern crate linked_hash_set;
 use linked_hash_set::LinkedHashSet;
 use serde_json::{json, Deserializer, Value};
 use std::error::Error;
-use std::io::{BufRead, Write};
+use std::io::{BufRead, Read, Write};
 use std::str;
 
 mod unwind_json;
@@ -64,6 +64,37 @@ pub fn write_json_to_csv(
     Ok(())
 }
 
+pub fn write_json_array_to_csv(
+    mut rdr: impl Read,
+    wtr: impl Write,
+    fields: Option<Vec<&str>>,
+    delimiter: Option<String>,
+    flatten: bool,
+    unwind_on: Option<String>,
+    samples: Option<u32>,
+    double_quote: bool,
+) -> Result<(), Box<dyn Error>> {
+    let mut data = Vec::new();
+    rdr.read_to_end(&mut data)?;
+    let rows: Vec<serde_json::Value> = serde_json::from_slice(&data)?;
+    let mut headers = Vec::new();
+    for (key, _) in rows[0].as_object().expect("expected array of objects").iter() {
+        headers.push(key.to_string());
+    }
+
+    let mut csv_writer = csv::WriterBuilder::new()
+        .delimiter(delimiter.unwrap_or(",".to_string()).as_bytes()[0])
+        .double_quote(double_quote)
+        .from_writer(wtr);
+
+    csv_writer.write_record(convert_header_to_csv_record(&headers)?)?;
+
+    for item in rows {
+        csv_writer.write_record(convert_json_record_to_csv_record(&headers, &item)?)?;
+    }
+    Ok(())
+}
+
 /// Handle the flattening and unwinding of a value
 /// Note that when unwinding a large array, all the array values
 /// are held in memory. This could be improved.
@@ -85,16 +116,16 @@ fn preprocess(item: Value, flatten: bool, unwind_on: &Option<String>) -> Vec<Val
     container
 }
 
-pub fn convert_header_to_csv_record(headers: &Vec<&str>) -> Result<Vec<String>, Box<dyn Error>> {
+pub fn convert_header_to_csv_record<S: AsRef<str>>(headers: &Vec<S>) -> Result<Vec<String>, Box<dyn Error>> {
     let mut record = Vec::new();
     for item in headers {
-        record.push(String::from(item.clone()));
+        record.push(String::from(item.as_ref()));
     }
     Ok(record)
 }
 
-pub fn convert_json_record_to_csv_record(
-    headers: &Vec<&str>,
+pub fn convert_json_record_to_csv_record<S: AsRef<str>>(
+    headers: &Vec<S>,
     json_map: &Value,
 ) -> Result<Vec<String>, Box<dyn Error>> {
     // iterate over headers
@@ -102,7 +133,7 @@ pub fn convert_json_record_to_csv_record(
     // if not, blank string
     let mut record = Vec::new();
     for item in headers {
-        let value = json_map.get(&item.to_string());
+        let value = json_map.get(&item.as_ref().to_string());
         let csv_result = match value {
             Some(header_item) => match header_item.as_str() {
                 Some(s) => String::from(s),

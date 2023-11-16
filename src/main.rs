@@ -22,6 +22,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .takes_value(true),
         )
         .arg(
+            Arg::with_name("array")
+                .help("handle as array")
+                .short("a")
+                .long("array"),
+        )
+        .arg(
             Arg::with_name("flatten")
                 .help("Flatten nested jsons and arrays")
                 .short("F")
@@ -91,10 +97,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         Some(s) => Some(s.parse::<u32>().unwrap()),
         None => Some(1),
     };
+    let is_array = m.is_present("array");
 
-    convert::write_json_to_csv(
-        reader, writer, fields, delimiter, flatten, unwind_on, samples, double_quote
-    )
+    if is_array {
+        convert::write_json_array_to_csv(
+            reader, writer, fields, delimiter, flatten, unwind_on, samples, double_quote
+        )
+    } else {
+        convert::write_json_to_csv(
+            reader, writer, fields, delimiter, flatten, unwind_on, samples, double_quote
+        )
+    }
 }
 
 // From https://github.com/BurntSushi/xsv/blob/master/src/config.rs
