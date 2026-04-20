@@ -10,6 +10,7 @@ mod unwind_json;
 /// write CSV to the writer. Supports JSON arrays and newline-delimited JSON.
 /// Performs optional flatten and unwind transformations.
 /// Output keys are sorted alphabetically by default.
+/// When `no_headers` is true, the header row is not written.
 pub fn write_json_to_csv(
     mut rdr: impl BufRead,
     mut wtr: impl Write,
@@ -19,6 +20,7 @@ pub fn write_json_to_csv(
     unwind_on: Option<String>,
     samples: Option<u32>,
     double_quote: bool,
+    no_headers: bool,
 ) -> Result<(), Box<dyn Error>> {
     let delim_byte = delimiter.as_deref().unwrap_or(",").as_bytes()[0];
     let samples = samples.unwrap_or(1);
@@ -71,9 +73,10 @@ pub fn write_json_to_csv(
         None => detected_headers.iter().map(|s| s.as_str()).collect(),
     };
 
-    // Write header row
-    let header_record: Vec<String> = headers.iter().map(|s| s.to_string()).collect();
-    write_csv_record(&mut wtr, &header_record, delim_byte, double_quote)?;
+    if !no_headers {
+        let header_record: Vec<String> = headers.iter().map(|s| s.to_string()).collect();
+        write_csv_record(&mut wtr, &header_record, delim_byte, double_quote)?;
+    }
 
     // Write cached values
     for item in &cached_values {
@@ -184,6 +187,7 @@ mod test {
         unwind_on: Option<String>,
         samples: Option<u32>,
         double_quote: bool,
+        no_headers: bool,
     ) {
         let sample_json = input.as_bytes();
         let mut output = Vec::new();
@@ -196,6 +200,7 @@ mod test {
             unwind_on,
             samples,
             double_quote,
+            no_headers,
         )
         .unwrap();
         let str_out = std::str::from_utf8(&output).unwrap();
@@ -214,6 +219,23 @@ mod test {
             None,
             Some(1),
             false,
+            false,
+        )
+    }
+
+    #[test]
+    fn test_no_headers() {
+        run_test(
+            r#"{ "a": 1, "b": 2}
+            {"a": 3, "c": 2}"#,
+            "1,2\n3,\n",
+            None,
+            None,
+            false,
+            None,
+            Some(1),
+            false,
+            true,
         )
     }
 
@@ -228,6 +250,7 @@ mod test {
             None,
             Some(1),
             false,
+            false,
         );
         run_test(
             r#"{"array": [1,2] }"#,
@@ -237,6 +260,7 @@ mod test {
             true,
             None,
             Some(1),
+            false,
             false,
         );
     }
@@ -252,6 +276,7 @@ mod test {
             Option::from(String::from("b")),
             Some(1),
             false,
+            false,
         );
     }
 
@@ -266,6 +291,7 @@ mod test {
             None,
             Some(1),
             false,
+            false,
         )
     }
 
@@ -279,6 +305,7 @@ mod test {
             true,
             Option::from(String::from("b")),
             Some(1),
+            false,
             false,
         );
     }
@@ -295,6 +322,7 @@ mod test {
             None,
             Some(1),
             false,
+            false,
         )
     }
 
@@ -310,6 +338,7 @@ mod test {
             None,
             Some(1),
             false,
+            false,
         )
     }
 
@@ -324,6 +353,7 @@ mod test {
             false,
             None,
             Some(1),
+            false,
             false,
         )
     }
@@ -341,6 +371,7 @@ mod test {
             false,
             None,
             Some(1),
+            false,
             false,
         );
         assert!(result.is_err());
